@@ -1,0 +1,57 @@
+EXAMFORGE v1.1
+Création d'épreuves
+Conçu et développé par Kamguia Aimé
+===================================
+
+DÉMARRAGE
+---------
+1. Ouvrir le fichier "index.html" ou "examforge.html" avec Edge, Chrome ou Firefox.
+2. Renseigner les informations de l'épreuve.
+3. Ajouter des sections, questions et sous-questions.
+4. Vérifier l'aperçu à droite.
+5. Cliquer sur "Imprimer / PDF" pour produire le sujet.
+
+FONCTIONNALITÉS
+---------------
+- Informations : métier, module, année, durée, type et note maximale.
+- Sections et questions numérotées.
+- Sous-questions (a, b, c...).
+- Points par question et total du barème.
+- Espaces de réponse.
+- Aperçu en temps réel.
+- Impression A4 / export PDF.
+- Export HTML d'une épreuve.
+- Bibliothèque locale d'épreuves.
+- Export de toute la bibliothèque au format JSON.
+- Import et restauration d'une bibliothèque JSON.
+- Interface adaptée aux écrans mobiles.
+
+SAUVEGARDE ET TRANSFERT
+-----------------------
+Les épreuves sont stockées dans le navigateur utilisé, sur l'appareil actuel.
+Elles ne sont pas automatiquement synchronisées entre ordinateurs.
+
+Pour sauvegarder ou transférer les épreuves :
+1. Cliquer sur "Exporter sauvegardes".
+2. Conserver le fichier JSON obtenu.
+3. Sur l'autre navigateur ou ordinateur, ouvrir ExamForge.
+4. Cliquer sur "Importer sauvegardes" et sélectionner le fichier JSON.
+
+IMPRESSION / PDF
+----------------
+1. Cliquer sur "Imprimer / PDF".
+2. Choisir "Enregistrer au format PDF".
+3. Sélectionner le papier A4.
+4. Vérifier l'aperçu avant d'enregistrer.
+
+MODÈLE D'ÉPREUVE
+----------------
+Le modèle de document fourni est actuellement configuré pour
+RICHY PROFESSIONAL SCHOOL OF MICROFINANCE.
+
+PUBLICATION
+-----------
+Application statique : aucun serveur ni installation n'est nécessaire.
+Le fichier index.html sert de page d'entrée pour un hébergement web statique.
+
+© 2026 Kamguia Aimé — ExamForge.
