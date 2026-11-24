@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExamForge v1.1 - Création d'Épreuves</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* TOOLBAR */
+    .toolbar {
+      background: #fff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      z-index: 10;
+    }
+    .toolbar-right { flex-wrap: wrap; }
+    @media (max-width: 980px) {
+      body { height: auto; min-height: 100vh; overflow: auto; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .toolbar-left, .toolbar-right { flex-wrap: wrap; }
+      .main { height: auto; min-height: calc(100vh - 49px); flex-direction: column; }
+      .panel-left, .panel-right { width: 100%; min-height: 60vh; }
+      .panel-right { min-height: 70vh; }
+      .preview-frame { min-height: 60vh; }
+      .status-bar { position: sticky; }
+    }
+    @media (max-width: 560px) {
+      .toolbar-left { align-items: flex-start; flex-direction: column; gap: 4px; }
+      .toolbar-subtitle { border-left: 0; padding-left: 0; }
+      .toolbar-right { width: 100%; }
+      .toolbar-right .btn { flex: 1 1 auto; justify-content: center; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
+      .panel-body { padding: 12px; }
+      .question-header { gap: 6px; }
+      .sub-questions { margin-left: 12px; padding-left: 8px; }
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 16px; }
+    .toolbar-logo { font-size: 20px; font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 8px; }
+    .toolbar-logo span { font-size: 24px; }
+    .toolbar-subtitle { font-size: 12px; color: var(--gray-400); border-left: 1px solid var(--gray-300); padding-left: 12px; }
+    .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--gray-300);
+      background: #fff;
+      color: var(--gray-700);
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { background: var(--gray-50); border-color: var(--gray-400); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .btn-danger { color: var(--danger); }
+    .btn-danger:hover { background: #fef2f2; border-color: var(--danger); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-icon { padding: 4px 8px; }
+
+    /* MAIN LAYOUT */
+    .main { display: flex; height: calc(100vh - 49px); }
+
+    /* LEFT PANEL */
+    .panel-left {
+      width: 50%;
+      border-right: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+    .panel-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-header-title { font-size: 13px; font-weight: 600; color: var(--gray-600); }
+    .panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+
+    /* RIGHT PANEL */
+    .panel-right {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      background: var(--gray-200);
+    }
+    .panel-right .panel-header { background: var(--gray-100); }
+    .preview-frame { flex: 1; overflow-y: auto; padding: 16px; }
+    .preview-paper {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      min-height: 800px;
+    }
+    .preview-paper iframe { width: 100%; border: none; min-height: 800px; }
+
+    /* FORM */
+    .form-section { margin-bottom: 20px; }
+    .form-section-title {
+      font-size: 12px; font-weight: 600; color: var(--gray-500);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--gray-200); padding-bottom: 8px; margin-bottom: 12px;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 4px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300);
+      border-radius: 6px; font-size: 13px; color: var(--gray-800); transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .form-textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* SECTION CARD */
+    .section-card {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 8px; padding: 12px; margin-bottom: 12px;
+    }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      color: var(--gray-800); cursor: pointer; padding: 2px 6px;
+      border-radius: 4px; border: 1px solid transparent;
+    }
+    .section-title:hover { border-color: var(--gray-300); background: #fff; }
+    .section-title-input {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      padding: 2px 6px; border: 1px solid var(--primary); border-radius: 4px; outline: none;
+    }
+    .section-meta { font-size: 11px; color: var(--gray-400); margin-left: 8px; }
+    .section-actions { display: flex; align-items: center; gap: 6px; }
+
+    /* PRESETS */
+    .presets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .preset-btn {
+      font-size: 11px; padding: 3px 8px; background: #fff;
+      border: 1px solid var(--gray-200); border-radius: 4px;
+      cursor: pointer; color: var(--gray-600);
+    }
+    .preset-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+
+    /* QUESTION CARD */
+    .question-card {
+      background: #fff; border: 1px solid var(--gray-200);
+      border-radius: 8px; padding: 12px; margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .question-header { display: flex; align-items: flex-start; gap: 8px; }
+    .question-number {
+      background: #eff6ff; color: var(--primary); font-size: 13px;
+      font-weight: 700; padding: 4px 8px; border-radius: 4px; min-width: 28px; text-align: center;
+    }
+    .question-body { flex: 1; }
+    .question-meta { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .question-meta select, .question-meta input {
+      font-size: 11px; padding: 3px 6px; border: 1px solid var(--gray-200); border-radius: 4px;
+    }
+    .question-meta input[type="number"] { width: 50px; text-align: center; }
+
+    /* SUB-QUESTION */
+    .sub-questions { margin-left: 36px; margin-top: 8px; border-left: 2px solid var(--gray-200); padding-left: 12px; }
+    .sub-question { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+    .sub-label { font-size: 12px; font-weight: 600; color: var(--gray-600); min-width: 16px; padding-top: 4px; }
+    .sub-question textarea {
+      flex: 1; font-size: 12px; padding: 4px 8px; border: 1px solid var(--gray-200);
+      border-radius: 4px; resize: none; min-height: 28px; font-family: inherit;
+    }
+    .sub-question textarea:focus { outline: none; border-color: var(--primary); }
+    .sub-meta { display: flex; gap: 4px; align-items: center; }
+    .sub-meta select, .sub-meta input { font-size: 10px; padding: 2px 4px; border: 1px solid var(--gray-200); border-radius: 3px; }
+    .sub-meta input[type="number"] { width: 40px; text-align: center; }
+
+    .question-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+    /* ADD BUTTON */
+    .add-btn {
+      width: 100%; padding: 10px; border: 2px dashed var(--gray-300);
+      border-radius: 8px; background: transparent; color: var(--gray-500);
+      font-size: 13px; cursor: pointer; transition: all 0.15s; margin-top: 8px;
+    }
+    .add-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+    .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state-text { font-size: 14px; }
+    .empty-state-hint { font-size: 12px; margin-top: 4px; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: #fff; border-radius: 12px; width: 90%; max-width: 600px;
+      max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-close { font-size: 20px; cursor: pointer; color: var(--gray-400); background: none; border: none; }
+    .modal-close:hover { color: var(--gray-600); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .exam-card {
+      padding: 12px; border: 1px solid var(--gray-200); border-radius: 8px;
+      cursor: pointer; margin-bottom: 8px; transition: all 0.15s;
+    }
+    .exam-card:hover { border-color: var(--primary); background: #eff6ff; }
+    .exam-card.active { border-color: var(--primary); background: #eff6ff; }
+    .exam-card-title { font-weight: 600; font-size: 14px; }
+    .exam-card-meta { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+    .exam-card-date { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+    /* STATUS BAR */
+    .status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--gray-200); padding: 4px 16px;
+      font-size: 11px; color: var(--gray-500); display: flex;
+      justify-content: space-between; z-index: 5;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="toolbar-logo"><span>&#128221;</span> ExamForge</div>
+    <div class="toolbar-subtitle">Création d'épreuves · Par Kamguia Aimé</div>
+  </div>
+  <div class="toolbar-right">
+    <button class="btn" onclick="newExam()">Nouveau</button>
+    <button class="btn" onclick="saveExam()">💾 Sauvegarder</button>
+    <button class="btn" onclick="openLibrary()">📚 Bibliothèque (<span id="examCount">0</span>)</button>
+    <div style="width:1px;height:24px;background:var(--gray-300);margin:0 4px"></div>
+    <button class="btn" onclick="exportHTML()">📥 Exporter HTML</button>
+    <button class="btn" onclick="exportLibrary()">📦 Exporter sauvegardes</button>
+    <button class="btn" onclick="importLibrary()">📤 Importer sauvegardes</button>
+    <button class="btn btn-primary" onclick="printExam()">🖨️ Imprimer / PDF</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="panel-left">
+    <div class="panel-header">
+      <span class="panel-header-title">&#9998; Éditer l'épreuve</span>
+      <span id="saveStatus" style="font-size:11px;color:var(--gray-400)">● Non sauvegardé</span>
+    </div>
+    <div class="panel-body" id="formBody">
+      <div class="form-section">
+        <div class="form-section-title">Informations de l'épreuve</div>
+        <div class="form-group">
+          <label class="form-label">Métier</label>
+          <input type="text" class="form-input" id="f-metier" placeholder="ANALYSE DE CREDIT EN MICROFINANCE" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Module</label>
+          <input type="text" class="form-input" id="f-module" placeholder="Gestion des Microcrédits" oninput="updatePreview()">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Année</label>
+            <input type="text" class="form-input" id="f-annee" placeholder="2025-2026" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Durée</label>
+            <input type="text" class="form-input" id="f-duree" placeholder="2H00" oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Type d'épreuve</label>
+            <select class="form-select" id="f-type" onchange="updatePreview()">
+              <option>Contrôle Continu</option>
+              <option>Examen</option>
+              <option>Devoir Surveillé</option>
+              <option>TP</option>
+              <option>Interrogation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Note maximale</label>
+            <input type="number" class="form-input" id="f-note" value="20" min="1" max="100" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="form-section-title" style="margin:0;border:none;padding:0">Sections & Questions</div>
+          <button class="btn btn-sm btn-primary" onclick="addSection()">+ Section</button>
+        </div>
+        <div id="sectionsContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="panel-header">
+      <span class="panel-header-title">&#128065; Aperçu en temps réel</span>
+    </div>
+    <div class="preview-frame">
+      <div class="preview-paper">
+        <iframe id="previewFrame" title="Aperçu"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="statusLeft">ExamForge v1.1 — Conçu et développé par Kamguia Aimé</span>
+  <span id="statusRight"></span>
+</div>
+
+<div class="modal-overlay" id="libraryModal" style="display:none" onclick="closeLibrary(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">📚 Bibliothèque d'épreuves</span>
+      <button class="modal-close" onclick="closeLibrary()">&times;</button>
+    </div>
+    <div class="modal-body" id="libraryBody"></div>
+  </div>
+</div>
+
+<script>
+const ETABLISSEMENT = "RICHY PROFESSIONAL SCHOOL OF MICROFINANCE";
+const DEVISE_ECOLE = "Rigueur - Professionnalisme - Performance";
+const MINISTERE = "Ministère de l'Emploi et de la Formation Professionnelle";
+const REPUBLIQUE = "République du Cameroun";
+const DEVISE_PAYS = "Paix - Travail - Patrie";
+
+let examData = {
+  id: generateId(),
+  metier: '',
+  module: '',
+  annee: '2025-2026',
+  type: 'Contrôle Continu',
+  duree: '2H00',
+  note: 20,
+  sections: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+let currentExamId = null;
+function normalizeExam(exam) {
+  if (!exam || typeof exam !== 'object' || !Array.isArray(exam.sections)) return null;
+  const safeId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value) ? value : generateId();
+  const clamp = (value, min, max, fallback) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+  };
+  return {
+    id: safeId(exam.id),
+    metier: String(exam.metier ?? ''),
+    module: String(exam.module ?? ''),
+    annee: String(exam.annee ?? ''),
+    type: String(exam.type ?? 'Contrôle Continu'),
+    duree: String(exam.duree ?? '2H00'),
+    note: clamp(exam.note, 1, 100, 20),
+    createdAt: String(exam.createdAt ?? new Date().toISOString()),
+    updatedAt: String(exam.updatedAt ?? new Date().toISOString()),
+    sections: exam.sections.filter(section => section && typeof section === 'object').map(section => ({
+      id: safeId(section.id),
+      titre: String(section.titre ?? ''),
+      questions: (Array.isArray(section.questions) ? section.questions : [])
+        .filter(q => q && typeof q === 'object')
+        .map((q, index) => ({
+          id: safeId(q.id),
+          numero: clamp(q.numero, 1, 999, index + 1),
+          texte: String(q.texte ?? ''),
+          type: ['texte', 'formule', 'definition', 'explication', 'calcul'].includes(q.type) ? q.type : 'texte',
+          points: clamp(q.points, 0, 100, 0),
+          espaceReponse: clamp(q.espaceReponse, 1, 20, 4),
+          sousQuestions: (Array.isArray(q.sousQuestions) ? q.sousQuestions : [])
+            .filter(sq => sq && typeof sq === 'object')
+            .map((sq, sqIndex) => ({
+              id: safeId(sq.id),
+              label: String(sq.label ?? String.fromCharCode(97 + (sqIndex % 26))),
+              texte: String(sq.texte ?? ''),
+              type: ['texte', 'formule', 'definition'].includes(sq.type) ? sq.type : 'texte',
+              espaceReponse: clamp(sq.espaceReponse, 1, 20, 3)
+            }))
+        }))
+    }))
+  };
+}
+function loadSavedExams() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('examforge-exams') || '[]');
+    return Array.isArray(parsed) ? parsed.map(normalizeExam).filter(Boolean) : [];
+  } catch (error) {
+    console.warn('Bibliothèque ExamForge illisible :', error);
+    return [];
+  }
+}
+let savedExams = loadSavedExams();
+function persistExams() {
+  try {
+    localStorage.setItem('examforge-exams', JSON.stringify(savedExams));
+    return true;
+  } catch (error) {
+    alert('Impossible de sauvegarder les épreuves dans ce navigateur. Exportez régulièrement votre bibliothèque pour éviter toute perte.');
+    console.error(error);
+    return false;
+  }
+}
+let editingSectionTitle = null;
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ==================== SECTIONS ====================
+function addSection(titre) {
+  examData.sections.push({ id: generateId(), titre: titre || '', questions: [] });
+  renderSections();
+  updatePreview();
+}
+
+function updateSectionTitle(sectionId, titre) {
+  const s = examData.sections.find(s => s.id === sectionId);
+  if (s) { s.titre = titre; updatePreview(); }
+}
+
+function removeSection(sectionId) {
+  if (!confirm('Supprimer cette section ?')) return;
+  examData.sections = examData.sections.filter(s => s.id !== sectionId);
+  renderSections();
+  updatePreview();
+}
+
+// ==================== QUESTIONS ====================
+function addQuestion(sectionId) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  section.questions.push({
+    id: generateId(),
+    numero: section.questions.length + 1,
+    texte: '', type: 'texte', points: 0,
+    sousQuestions: [], espaceReponse: 4
+  });
+  renderSections();
+  updatePreview();
+}
+
+function updateQuestion(sectionId, questionId, field, value) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  const q = section.questions.find(q => q.id === questionId);
+  if (q) { q[field] = value; updatePreview(); }
+}
+
+function removeQuestion(sectionId, questionId) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  section.questions = section.questions.filter(q => q.id !== questionId);
+  section.questions.forEach((q, i) => q.numero = i + 1);
+  renderSections();
+  updatePreview();
+}
+
+// ==================== SOUS-QUESTIONS ====================
+function addSousQuestion(sectionId, questionId) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  const q = section.questions.find(q => q.id === questionId);
+  if (!q) return;
+  const labels = 'abcdefghijklmnopqrstuvwxyz';
+  q.sousQuestions.push({
+    id: generateId(),
+    label: labels[q.sousQuestions.length] || String(q.sousQuestions.length + 1),
+    texte: '', type: 'texte', espaceReponse: 3
+  });
+  renderSections();
+  updatePreview();
+}
+
+function updateSousQuestion(sectionId, questionId, sqId, field, value) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  const q = section.questions.find(q => q.id === questionId);
+  if (!q) return;
+  const sq = q.sousQuestions.find(s => s.id === sqId);
+  if (sq) { sq[field] = value; updatePreview(); }
+}
+
+function removeSousQuestion(sectionId, questionId, sqId) {
+  const section = examData.sections.find(s => s.id === sectionId);
+  if (!section) return;
+  const q = section.questions.find(q => q.id === questionId);
+  if (!q) return;
+  q.sousQuestions = q.sousQuestions.filter(s => s.id !== sqId);
+  const labels = 'abcdefghijklmnopqrstuvwxyz';
+  q.sousQuestions.forEach((s, i) => s.label = labels[i] || String(i + 1));
+  renderSections();
+  updatePreview();
+}
+
+// ==================== RENDER FORM ====================
+function renderSections() {
+  const container = document.getElementById('sectionsContainer');
+  if (examData.sections.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128203;</div><div class="empty-state-text">Aucune section</div><div class="empty-state-hint">Cliquez sur "+ Section" pour commencer</div></div>';
+    return;
+  }
+  let html = '';
+  examData.sections.forEach(section => {
+    const qCount = section.questions.length;
+    html += `<div class="section-card"><div class="section-header"><div>`;
+    if (editingSectionTitle === section.id) {
+      html += `<input type="text" class="section-title-input" value="${escHtml(section.titre)}" onblur="updateSectionTitle('${section.id}',this.value);editingSectionTitle=null;renderSections()" onkeydown="if(event.key==='Enter'){this.blur()}" autofocus>`;
+    } else {
+      html += `<span class="section-title" onclick="editingSectionTitle='${section.id}';renderSections()">${escHtml(section.titre) || 'Cliquer pour nommer la section'}</span>`;
+    }
+    html += `<span class="section-meta">${qCount} question${qCount!==1?'s':''}</span></div><div class="section-actions"><button class="btn btn-sm btn-danger btn-icon" onclick="removeSection('${section.id}')">&#128465;</button></div></div>`;
+    if (!section.titre && editingSectionTitle !== section.id) {
+      html += `<div class="presets"><button class="preset-btn" onclick="updateSectionTitle('${section.id}','QUESTIONS DE COURS');renderSections()">QUESTIONS DE COURS</button><button class="preset-btn" onclick="updateSectionTitle('${section.id}','EXERCICES');renderSections()">EXERCICES</button><button class="preset-btn" onclick="updateSectionTitle('${section.id}','ÉTUDE DE CAS');renderSections()">ÉTUDE DE CAS</button><button class="preset-btn" onclick="updateSectionTitle('${section.id}','QUESTIONS PRATIQUES');renderSections()">QUESTIONS PRATIQUES</button><button class="preset-btn" onclick="updateSectionTitle('${section.id}','TRAVAUX DIRIGÉS');renderSections()">TRAVAUX DIRIGÉS</button></div>`;
+    }
+    section.questions.forEach(q => {
+      html += `<div class="question-card"><div class="question-header"><span class="question-number">${q.numero}</span><div class="question-body"><textarea class="form-textarea" rows="2" placeholder="Saisissez la question ici..." oninput="updateQuestion('${section.id}','${q.id}','texte',this.value)">${escHtml(q.texte)}</textarea><div class="question-meta"><select onchange="updateQuestion('${section.id}','${q.id}','type',this.value)"><option value="texte" ${q.type==='texte'?'selected':''}>Texte libre</option><option value="formule" ${q.type==='formule'?'selected':''}>Formule</option><option value="definition" ${q.type==='definition'?'selected':''}>Définition</option><option value="explication" ${q.type==='explication'?'selected':''}>Explication</option><option value="calcul" ${q.type==='calcul'?'selected':''}>Calcul</option></select><span style="font-size:11px;color:var(--gray-400)">Points:</span><input type="number" value="${q.points}" min="0" max="100" oninput="updateQuestion('${section.id}','${q.id}','points',parseInt(this.value)||0)"><span style="font-size:11px;color:var(--gray-400)">Espace:</span><input type="number" value="${q.espaceReponse}" min="1" max="20" oninput="updateQuestion('${section.id}','${q.id}','espaceReponse',parseInt(this.value)||4)"><span style="font-size:11px;color:var(--gray-400)">lignes</span></div>`;
+      if (q.sousQuestions.length > 0) {
+        html += `<div class="sub-questions">`;
+        q.sousQuestions.forEach(sq => {
+          html += `<div class="sub-question"><span class="sub-label">${sq.label})</span><textarea rows="1" placeholder="Sous-question..." oninput="updateSousQuestion('${section.id}','${q.id}','${sq.id}','texte',this.value)">${escHtml(sq.texte)}</textarea><div class="sub-meta"><select onchange="updateSousQuestion('${section.id}','${q.id}','${sq.id}','type',this.value)"><option value="texte" ${sq.type==='texte'?'selected':''}>Texte</option><option value="formule" ${sq.type==='formule'?'selected':''}>Formule</option><option value="definition" ${sq.type==='definition'?'selected':''}>Définition</option></select><input type="number" value="${sq.espaceReponse}" min="1" max="20" oninput="updateSousQuestion('${section.id}','${q.id}','${sq.id}','espaceReponse',parseInt(this.value)||3)"><button class="btn btn-sm btn-danger btn-icon" style="padding:2px 4px;font-size:10px" onclick="removeSousQuestion('${section.id}','${q.id}','${sq.id}')">&#10005;</button></div></div>`;
+        });
+        html += `</div>`;
+      }
+      html += `<div class="question-actions"><button class="btn btn-sm" onclick="addSousQuestion('${section.id}','${q.id}')">+ Sous-question</button><button class="btn btn-sm btn-danger" onclick="removeQuestion('${section.id}','${q.id}')">Supprimer</button></div></div></div></div>`;
+    });
+    html += `<button class="add-btn" onclick="addQuestion('${section.id}')">+ Ajouter une question</button></div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ==================== PREVIEW ====================
+function readForm() {
+  examData.metier = document.getElementById('f-metier').value;
+  examData.module = document.getElementById('f-module').value;
+  examData.annee = document.getElementById('f-annee').value;
+  examData.type = document.getElementById('f-type').value;
+  examData.duree = document.getElementById('f-duree').value;
+  examData.note = parseInt(document.getElementById('f-note').value) || 20;
+}
+
+function updatePreview() {
+  readForm();
+  const iframe = document.getElementById('previewFrame');
+  iframe.srcdoc = generateExamHTML();
+  let totalQ = 0;
+  examData.sections.forEach(s => totalQ += s.questions.length);
+  let totalPoints = 0;
+  examData.sections.forEach(section => section.questions.forEach(question => totalPoints += Number(question.points) || 0));
+  document.getElementById('statusRight').textContent = `${examData.sections.length} section(s) · ${totalQ} question(s) · Barème : ${totalPoints} / ${examData.note} pts`;
+  document.getElementById('saveStatus').textContent = currentExamId ? '● Modifications non sauvegardées' : '● Non sauvegardé';
+}
+
+function generateExamHTML() {
+  let sectionsHTML = '';
+  examData.sections.forEach(section => {
+    let questionsHTML = '';
+    section.questions.forEach(q => {
+      questionsHTML += `<div class="question"><div class="question-header"><span class="question-number">${q.numero}.</span><span class="question-text">${q.texte ? escHtml(q.texte) : '<em style="color:#999">...</em>'}</span>${q.points > 0 ? `<span class="question-points">(${q.points}pt${q.points > 1 ? 's' : ''})</span>` : ''}</div>`;
+      if (q.sousQuestions.length > 0) {
+        q.sousQuestions.forEach(sq => {
+          questionsHTML += `<div class="sub-question"><div class="sub-question-header"><span class="sub-question-label">${sq.label})</span><span class="sub-question-text">${sq.texte ? escHtml(sq.texte) : '<em style="color:#999">...</em>'}</span></div><div class="answer-space" style="min-height:${sq.espaceReponse * 20}px"></div></div>`;
+        });
+      } else {
+        questionsHTML += `<div class="answer-space" style="min-height:${q.espaceReponse * 20}px"></div>`;
+      }
+      questionsHTML += `</div>`;
+    });
+    sectionsHTML += `<div class="exam-section"><h2 class="exam-section-title">${escHtml(section.titre)}</h2>${questionsHTML || '<p style="color:#999;font-style:italic">Aucune question</p>'}</div>`;
+  });
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Epreuve - ${escHtml(examData.metier)}</title>
+<style>
+  @page { size: A4; margin: 15mm 20mm; }
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; }
+    .no-print { display: none !important; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Times New Roman', 'Georgia', serif; font-size: 14px; line-height: 1.6; color: #000; margin: 0; padding: 10px 15px; background: #fff; }
+  .exam-container { max-width: 100%; }
+
+  .exam-header { border-top: 2px solid #000; border-bottom: 3px double #000; padding: 12px 0; margin-bottom: 12px; }
+  .exam-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
+  .exam-header .republique { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+  .exam-header .devise { font-size: 12px; font-style: italic; letter-spacing: 2px; margin-top: 5px; }
+  .exam-header .ministere { font-size: 13px; text-transform: uppercase; margin-bottom: 3px; }
+  .exam-header .etablissement { font-size: 16px; font-weight: bold; text-transform: uppercase; margin: 6px 0; letter-spacing: 1px; }
+  .exam-header .devise-ecole { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; }
+  .exam-header .annee { font-size: 13px; margin-top: 10px; text-align: center; }
+
+  .exam-info-bar { display: flex; justify-content: space-between; align-items: center; border: 2px solid #000; padding: 6px 12px; margin: 10px 0; font-size: 13px; }
+  .exam-info-bar .info-label { font-weight: bold; }
+  .exam-info-bar .note-badge { border: 2px solid #000; padding: 3px 12px; font-weight: bold; font-size: 16px; min-width: 50px; text-align: center; }
+
+  .exam-section { margin-bottom: 15px; }
+  .exam-section-title { font-size: 14px; font-weight: bold; text-decoration: underline; text-transform: uppercase; margin: 18px 0 10px; }
+  .question { margin-bottom: 12px; page-break-inside: avoid; }
+  .question-header { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+  .question-text, .sub-question-text { white-space: pre-wrap; }
+  .question-number { font-weight: bold; min-width: 22px; }
+  .question-points { font-size: 12px; color: #666; font-style: italic; margin-left: auto; }
+  .sub-question { margin-left: 30px; margin-bottom: 10px; }
+  .sub-question-header { display: flex; gap: 8px; margin-bottom: 3px; }
+  .sub-question-label { font-weight: bold; min-width: 18px; }
+  .answer-space { min-height: 50px; margin: 6px 0 10px; }
+  .exam-footer { margin-top: 25px; padding-top: 8px; border-top: 1px solid #ccc; text-align: center; font-size: 10px; color: #999; }
+</style>
+</head>
+<body>
+<div class="exam-container">
+  <div class="exam-header">
+    <div class="exam-header-grid">
+      <div>
+        <div class="ministere">${MINISTERE}</div>
+        <div class="etablissement">${ETABLISSEMENT}</div>
+        <div class="devise-ecole">${DEVISE_ECOLE}</div>
+      </div>
+      <div>
+        <div class="republique">${REPUBLIQUE}</div>
+        <div class="devise">${DEVISE_PAYS}</div>
+      </div>
+    </div>
+    <div class="annee">Année : ${escHtml(examData.annee)}</div>
+  </div>
+  <div class="exam-info-bar">
+    <div><span class="info-label">Épreuve :</span> ${escHtml(examData.type)}</div>
+    <div><span class="info-label">Métier :</span> ${escHtml(examData.metier) || '...'}</div>
+    <div><span class="info-label">Module :</span> ${escHtml(examData.module) || '...'}</div>
+    <div><span class="info-label">Durée :</span> ${escHtml(examData.duree)}</div>
+    <div class="note-badge">/${examData.note}</div>
+  </div>
+  ${sectionsHTML || '<p style="color:#999;text-align:center;padding:40px;font-style:italic">Ajoutez des sections et des questions</p>'}
+</div>
+</body>
+</html>`;
+}
+
+// ==================== ACTIONS ====================
+function newExam() {
+  if (examData.sections.length > 0 || examData.metier) {
+    if (!confirm('Créer une nouvelle épreuve ? Les modifications non sauvegardées seront perdues.')) return;
+  }
+  examData = { id: generateId(), metier: '', module: '', annee: '2025-2026', type: 'Contrôle Continu', duree: '2H00', note: 20, sections: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  currentExamId = null;
+  loadFormFromData();
+  renderSections();
+  updatePreview();
+  document.getElementById('saveStatus').textContent = '● Non sauvegardé';
+}
+
+function saveExam() {
+  readForm();
+  examData.updatedAt = new Date().toISOString();
+  if (currentExamId) {
+    const idx = savedExams.findIndex(e => e.id === currentExamId);
+    if (idx >= 0) savedExams[idx] = JSON.parse(JSON.stringify(examData));
+    else savedExams.push(JSON.parse(JSON.stringify(examData)));
+  } else {
+    currentExamId = examData.id;
+    savedExams.push(JSON.parse(JSON.stringify(examData)));
+  }
+  if (!persistExams()) return;
+  document.getElementById('saveStatus').textContent = '┓ Sauvegardé';
+  document.getElementById('examCount').textContent = savedExams.length;
+}
+
+function loadExam(id) {
+  const exam = savedExams.find(e => e.id === id);
+  if (!exam) return;
+  examData = JSON.parse(JSON.stringify(exam));
+  currentExamId = exam.id;
+  loadFormFromData();
+  renderSections();
+  updatePreview();
+  document.getElementById('saveStatus').textContent = '✓ Sauvegardé';
+  closeLibrary();
+}
+
+function deleteExam(id) {
+  if (!confirm('Supprimer cette épreuve ?')) return;
+  const previousExams = savedExams;
+  savedExams = savedExams.filter(e => e.id !== id);
+  if (!persistExams()) { savedExams = previousExams; return; }
+  if (currentExamId === id) { currentExamId = null; document.getElementById('saveStatus').textContent = '● Non sauvegardé'; }
+  renderLibrary();
+}
+
+function loadFormFromData() {
+  document.getElementById('f-metier').value = examData.metier || '';
+  document.getElementById('f-module').value = examData.module || '';
+  document.getElementById('f-annee').value = examData.annee || '';
+  document.getElementById('f-type').value = examData.type || 'Contrôle Continu';
+  document.getElementById('f-duree').value = examData.duree || '2H00';
+  document.getElementById('f-note').value = examData.note || 20;
+}
+
+// ==================== LIBRARY ====================
+function openLibrary() { document.getElementById('libraryModal').style.display = 'flex'; renderLibrary(); }
+function closeLibrary(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('libraryModal').style.display = 'none'; }
+
+function renderLibrary() {
+  const body = document.getElementById('libraryBody');
+  if (savedExams.length === 0) {
+    body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128218;</div><div class="empty-state-text">Aucune épreuve sauvegardée</div><div class="empty-state-hint">Créez et sauvegardez votre première épreuve</div></div>';
+    return;
+  }
+  let html = '';
+  savedExams.forEach(exam => {
+    const totalQ = exam.sections.reduce((a, s) => a + s.questions.length, 0);
+    html += `<div class="exam-card ${currentExamId===exam.id?'active':''}" onclick="loadExam('${exam.id}')"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="exam-card-title">${escHtml(exam.metier) || 'Sans titre'}</div><div class="exam-card-meta">${exam.module ? escHtml(exam.module)+' · ' : ''}${escHtml(exam.type)} · ${escHtml(exam.annee)}</div><div class="exam-card-meta">${exam.sections.length} section(s) · ${totalQ} question(s)</div><div class="exam-card-date">${new Date(exam.updatedAt).toLocaleDateString('fr-FR')}</div></div><button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();deleteExam('${exam.id}')">&#128465;</button></div></div>`;
+  });
+  body.innerHTML = html;
+}
+
+// ==================== EXPORT ====================
+function printExam() {
+  readForm();
+  const html = generateExamHTML();
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) {
+    alert('La fenêtre d’impression a été bloquée. Autorisez les fenêtres pop-up pour ExamForge puis réessayez.');
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 400);
+}
+
+function exportHTML() {
+  readForm();
+  const html = generateExamHTML();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeMetier = (examData.metier || 'sans-titre').replace(/[^a-zA-Z0-9_-]+/g, '-').trim();
+  a.download = `Epreuve-${safeMetier}-${examData.annee}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function exportLibrary() {
+  const payload = {
+    app: 'ExamForge',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    exams: savedExams
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ExamForge-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function importLibrary() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const rawExams = Array.isArray(parsed) ? parsed : parsed.exams;
+      if (!Array.isArray(rawExams)) throw new Error('Format de sauvegarde non reconnu.');
+      const imported = rawExams.map(normalizeExam).filter(Boolean);
+      if (!imported.length) {
+        alert('Aucune épreuve valide trouvée dans ce fichier.');
+        return;
+      }
+      if (!confirm(`Importer ${imported.length} épreuve(s) ? Les épreuves portant le même identifiant seront mises à jour.`)) return;
+      const previousExams = savedExams;
+      const merged = [...savedExams];
+      imported.forEach(exam => {
+        const index = merged.findIndex(existing => existing.id === exam.id);
+        if (index >= 0) merged[index] = exam;
+        else merged.push(exam);
+      });
+      savedExams = merged;
+      if (!persistExams()) {
+        savedExams = previousExams;
+        return;
+      }
+      document.getElementById('examCount').textContent = savedExams.length;
+      renderLibrary();
+      alert(`${imported.length} épreuve(s) importée(s) avec succès.`);
+    } catch (error) {
+      alert('Impossible de lire cette sauvegarde : ' + error.message);
+    }
+  };
+  input.click();
+}
+
+// ==================== INIT ====================
+document.getElementById('examCount').textContent = savedExams.length;
+renderSections();
+updatePreview();
+</script>
+</body>
+</html>
